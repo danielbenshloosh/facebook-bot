@@ -1,3 +1,5 @@
+from selenium.webdriver.common.keys import Keys
+from time import sleep
 import json
 import os
 import sys
@@ -16,6 +18,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 import re
 
 
+# new tab .send_keys(Keys.COMMAND + 't')
 def get_facebook_images_url(img_links):
     urls = []
 
@@ -844,9 +847,10 @@ def test():
     print("Email : ", email)
 
 
-def scrape_1():
+def scrape_email_phone(url):
 
-    fromSelenium=False
+    fromSelenium=True
+    fromGroup=True
 
     if fromSelenium:
         with open("info.html", "r") as info:
@@ -857,18 +861,40 @@ def scrape_1():
         if ("password" not in cfg) or ("email" not in cfg):
             print("Your email or password is missing. Kindly write them in credentials.txt")
             exit(1)
-        urls = [
-            "https://www.facebook.com/MaslulimMMF/about/?ref=page_internal"
-        ]
-        print(urls)
-        if len(urls) > 0:
-            print("\nStarting Scraping...")
-            login(cfg["email"], cfg["password"])
 
-        driver.get("https://www.facebook.com/Mashkanta4u/about/?ref=page_internal")
+        print("\nStarting Scraping...")
+        login(cfg["email"], cfg["password"])
+
+        driver.get(url)
+
         htmlCodeByPageSource=driver.page_source
         htmlCodeByScript = driver.execute_script("return document.documentElement.outerHTML;")
 
+
+        if fromGroup:
+            try:
+                comments=driver.find_elements_by_xpath("//div[@aria-posinset]//div[contains(@aria-label,'Comment by')]//a/span/span[@dir='auto']")
+                print(comments)
+                print(len(comments))
+                i = 1
+                for comment in comments:
+
+                    try:
+                        print("Comment number", i)
+                        comment.send_keys(Keys.COMMAND + 't')
+                        sleep(10)
+                        # print(comments.text)
+                        # print(comments.tag_name)
+                        # print(comments.screenshot(f'foo{i}.png'))
+
+                    except Exception as e:
+                        print(e)
+                    i += 1
+                print(len(comments))
+                sleep(20)
+            except Exception as e:
+                print(e)
+                print("Comments Exception")
         # # Script code
         # f = open("htmls/htmlByScript.html", "a+")
         # f.write(htmlCodeByScript)
@@ -893,30 +919,34 @@ def scrape_1():
     # elm = driver.find_element_by_css_selector("html")
 
 
-    print("\n\n\n\n\n\n\n\n")
+    if not fromGroup:
 
-    try:
-        # Script code
+        try:
+            print("\n\n\n\n\n\n\n\n")
 
-        numberByScript = numberIsExist(htmlCodeByScript)
-        siteByScript = siteIsExist(htmlCodeByScript)
-        emailByScript = emailIsExist(htmlCodeByScript)
+            # Script code
+            if htmlCodeByScript != None:
+                numberByScript = numberIsExist(htmlCodeByScript)
+                siteByScript = siteIsExist(htmlCodeByScript)
+                emailByScript = emailIsExist(htmlCodeByScript)
+                print("By Script code:\n","Number : ",numberByScript,"Email : ",emailByScript) # ,"Site : ",siteByScript
 
-        print("\n\n\n\n\n\n\n\n")
+            print("\n\n\n\n\n\n\n\n")
 
-        # Page source code
-        numberByPageSource = numberIsExist(htmlCodeByPageSource)
-        siteByScriptPageSource = siteIsExist(htmlCodeByPageSource)
-        emailByScriptPageSource = emailIsExist(htmlCodeByPageSource)
+            # Page source code
+            if htmlCodeByPageSource != None:
+                numberByPageSource = numberIsExist(htmlCodeByPageSource)
+                siteByScriptPageSource = siteIsExist(htmlCodeByPageSource)
+                emailByScriptPageSource = emailIsExist(htmlCodeByPageSource)
+                print("By Page source code:\n","Number : ",numberByPageSource,"Email : ",emailByScriptPageSource ) # ,"Site : ",siteByScriptPageSource
 
-        print("\n\n\n\n\n\n\n\n")
+            print("\n\n\n\n\n\n\n\n")
 
-        print("By Script code:\n","Number : ",numberByScript,"Email : ",emailByScript) # ,"Site : ",siteByScript
-        print("By Page source code:\n","Number : ",numberByPageSource,"Email : ",emailByScriptPageSource ) # ,"Site : ",siteByScriptPageSource
-        if fromSelenium:
-            driver.close()
-    except Exception as e:
-        print(e)
+        except Exception as e:
+            print(e)
+
+    if fromSelenium:
+        driver.close()
     # # wait some time
     # print(WebDriverWait(driver, 5).until(
     #     EC.visibility_of_element_located((By.XPATH, "//span[normalize-space()='FIND US']//following::span[2]"))))
@@ -1064,5 +1094,5 @@ if __name__ == "__main__":
 
     # get things rolling
     #scraper()
-    scrape_1()
+    scrape_email_phone("https://www.facebook.com/groups/pishpeshuk.cars/permalink/2587361658054341/")
     # test()
