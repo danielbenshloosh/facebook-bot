@@ -16,6 +16,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 import re
+import pickle
 
 
 # new tab .send_keys(Keys.COMMAND + 't')
@@ -734,7 +735,7 @@ def scrape_group(url):
 
 def login(email, password):
     """ Logging into our own profile """
-
+    useCookies=True
     try:
         global driver
 
@@ -745,30 +746,60 @@ def login(email, password):
         options.add_argument("--disable-infobars")
         options.add_argument("--mute-audio")
         # options.add_argument("headless")
+        options.add_argument("user-data-dir=selenium")
 
         try:
+
             driver = webdriver.Chrome(
                 executable_path=ChromeDriverManager().install(), options=options
             )
-
         except Exception:
             print("Error loading chrome webdriver " + sys.exc_info()[0])
             exit(1)
+        if useCookies:
+            try:
+                cookies = pickle.load(open("cookies.pkl", "rb"))
+                print("Success read cookies")
+                for cookie in cookies:
+                    # cookie["domain"]=cookie["domain"][1:]
+                    try:
+
+                        driver.add_cookie({
+                            'name': cookie["name"],
+                            'value': cookie["value"],
+                            'domain': cookie["domain"]
+                        })
+                        print("Loaded cookie:",cookie)
+
+                    except Exception as e:
+                        # print("Error loading cookie",cookie)
+                        # print(e)
+                        pass
+                print("Cookies are loaded!")
+            except Exception as e:
+                print("Error loading cockies")
+                print(e)
+                exit(1)
 
         fb_path = facebook_https_prefix + facebook_link_body
         driver.get(fb_path)
         driver.maximize_window()
 
-        # filling the form
-        driver.find_element_by_name("email").send_keys(email)
-        driver.find_element_by_name("pass").send_keys(password)
+        if not useCookies:
+            try:
+                    print("Not use cookies!")
 
-        try:
-            # clicking on login button
-            driver.find_element_by_id("loginbutton").click()
-        except NoSuchElementException:
-            # Facebook new design
-            driver.find_element_by_name("login").click()
+                    # filling the form
+                    driver.find_element_by_name("email").send_keys(email)
+                    driver.find_element_by_name("pass").send_keys(password)
+                    # clicking on login button
+                    driver.find_element_by_id("loginbutton").click()
+                    # pickle.dump(driver.get_cookies(), open("cookies.pkl", "wb"))
+                    # print("Cookies are saved!")
+
+            except NoSuchElementException:
+                # Facebook new design
+                driver.find_element_by_name("login").click()
 
         # if your account uses multi factor authentication
         mfa_code_input = utils.safe_find_element_by_id(driver, "approvals_code")
@@ -802,7 +833,6 @@ def login(email, password):
 def scraper(**kwargs):
     with open("credentials.yaml", "r") as ymlfile:
         cfg = yaml.safe_load(stream=ymlfile)
-
     if ("password" not in cfg) or ("email" not in cfg):
         print("Your email or password is missing. Kindly write them in credentials.txt")
         exit(1)
@@ -842,9 +872,57 @@ def scraper(**kwargs):
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 def test():
-    print("info@mashkanta4u.co.il".upper())
-    email = emailIsExist("info@mashkanta4u.co.il".lower())
-    print("Email : ", email)
+    try:
+        global driver
+
+        options = Options()
+
+        #  Code to disable notifications pop up of Chrome Browser
+        options.add_argument("--disable-notifications")
+        options.add_argument("--disable-infobars")
+        options.add_argument("--mute-audio")
+        # options.add_argument("headless")
+
+        try:
+            driver = webdriver.Chrome(
+                executable_path=ChromeDriverManager().install(), options=options
+            )
+
+        except Exception:
+            print("Error loading chrome webdriver " + sys.exc_info()[0])
+            exit(1)
+
+        fb_path = facebook_https_prefix + facebook_link_body
+        driver.get("https://www.flaticon.com/")
+        # driver.maximize_window()
+        elements=driver.find_elements_by_class_name("lazyload--done")
+        print(len(elements))
+        for element in elements:
+            try:
+                # response = element.click()
+                # response = element.send_keys(Keys.COMMAND + 't')
+                print("element",element.get_attribute("href"))
+                print()
+                attributes = driver.execute_script(
+                    'var items = {}; for (index = 0; index < arguments[0].attributes.length; ++index) { items[arguments[0].attributes[index].name] = arguments[0].attributes[index].value }; return items;',
+                    element)
+                site = attributes["data-pin-url"]
+                print(site)
+                driver.execute_script(f"window.open('{site}', 'new_window')")
+
+                # print("response",response)
+                sleep(5)
+                driver.back()
+                sleep(5)
+            except Exception as e:
+                print(e)
+                print("FAILED In for test")
+
+    except Exception:
+        print("There's some error in log in.")
+        print(sys.exc_info()[0])
+        exit(1)
+
 
 
 def scrape_email_phone(url):
@@ -857,6 +935,11 @@ def scrape_email_phone(url):
             infoHtml = info.read()
         with open("credentials.yaml", "r") as ymlfile:
             cfg = yaml.safe_load(stream=ymlfile)
+            print(cfg)
+
+        with open("secrets.json", "r") as jsonfile:
+            cfg = json.loads(jsonfile.read())
+            print(cfg)
 
         if ("password" not in cfg) or ("email" not in cfg):
             print("Your email or password is missing. Kindly write them in credentials.txt")
@@ -864,7 +947,7 @@ def scrape_email_phone(url):
 
         print("\nStarting Scraping...")
         login(cfg["email"], cfg["password"])
-
+        sleep(3)
         driver.get(url)
 
         htmlCodeByPageSource=driver.page_source
@@ -881,8 +964,14 @@ def scrape_email_phone(url):
 
                     try:
                         print("Comment number", i)
-                        comment.send_keys(Keys.COMMAND + 't')
-                        sleep(10)
+                        # newDriver=comment.send_keys(Keys.COMMAND + 't')
+                        attributes = driver.execute_script(
+                            'var items = {}; for (index = 0; index < arguments[0].attributes.length; ++index) { items[arguments[0].attributes[index].name] = arguments[0].attributes[index].value }; return items;',
+                            comment)
+                        print("attributes:",attributes)
+
+                        sleep(20)
+                        break
                         # print(comments.text)
                         # print(comments.tag_name)
                         # print(comments.screenshot(f'foo{i}.png'))
@@ -1024,6 +1113,14 @@ def writeToCSV():
 
     print("NEED TO CHECK IF MAIL IS VALID!!!!!!!!!!")
 
+def is_fb_logged_in():
+    driver.get("https://facebook.com")
+    if 'Facebook – log in or sign up' in driver.title:
+        return False
+    else:
+        return True
+
+
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
@@ -1094,5 +1191,5 @@ if __name__ == "__main__":
 
     # get things rolling
     #scraper()
-    scrape_email_phone("https://www.facebook.com/groups/pishpeshuk.cars/permalink/2587361658054341/")
+    scrape_email_phone("https://www.facebook.com/permalink.php?story_fbid=316835503000602&id=101192311231590")
     # test()
