@@ -746,7 +746,7 @@ def login(email, password):
         options.add_argument("--disable-infobars")
         options.add_argument("--mute-audio")
         # options.add_argument("headless")
-        options.add_argument("user-data-dir=selenium")
+        options.add_argument("user-data-dir=selenium") # cookies using
 
         try:
 
@@ -756,50 +756,25 @@ def login(email, password):
         except Exception:
             print("Error loading chrome webdriver " + sys.exc_info()[0])
             exit(1)
-        if useCookies:
-            try:
-                cookies = pickle.load(open("cookies.pkl", "rb"))
-                print("Success read cookies")
-                for cookie in cookies:
-                    # cookie["domain"]=cookie["domain"][1:]
-                    try:
-
-                        driver.add_cookie({
-                            'name': cookie["name"],
-                            'value': cookie["value"],
-                            'domain': cookie["domain"]
-                        })
-                        print("Loaded cookie:",cookie)
-
-                    except Exception as e:
-                        # print("Error loading cookie",cookie)
-                        # print(e)
-                        pass
-                print("Cookies are loaded!")
-            except Exception as e:
-                print("Error loading cockies")
-                print(e)
-                exit(1)
-
         fb_path = facebook_https_prefix + facebook_link_body
-        driver.get(fb_path)
-        driver.maximize_window()
 
-        if not useCookies:
+        if not isFbLoggedIn():
             try:
-                    print("Not use cookies!")
-
-                    # filling the form
-                    driver.find_element_by_name("email").send_keys(email)
-                    driver.find_element_by_name("pass").send_keys(password)
-                    # clicking on login button
-                    driver.find_element_by_id("loginbutton").click()
-                    # pickle.dump(driver.get_cookies(), open("cookies.pkl", "wb"))
-                    # print("Cookies are saved!")
-
+                print("Facebook is not logged in")
+                print("Facebook logged in is starting")
+                # filling the form
+                driver.find_element_by_name("email").send_keys(email)
+                driver.find_element_by_name("pass").send_keys(password)
+                # clicking on login button
+                driver.find_element_by_id("loginbutton").click()
             except NoSuchElementException:
                 # Facebook new design
                 driver.find_element_by_name("login").click()
+        else:
+            print("Facebook is logged in!")
+
+        driver.get(fb_path)
+        driver.maximize_window()
 
         # if your account uses multi factor authentication
         mfa_code_input = utils.safe_find_element_by_id(driver, "approvals_code")
@@ -923,6 +898,192 @@ def test():
         print(sys.exc_info()[0])
         exit(1)
 
+def scrapeProfile(url):
+    driver.get(url)
+    sleep(2)
+
+    htmlCodeByPageSource = driver.page_source
+    htmlCodeByScript = driver.execute_script("return document.documentElement.outerHTML;")
+
+    try:
+        print("\n\n\n\n\n\n\n\n")
+
+        # Script code
+        if htmlCodeByScript != None:
+            numberByScript = numberIsExist(htmlCodeByScript)
+            siteByScript = siteIsExist(htmlCodeByScript)
+            emailByScript = emailIsExist(htmlCodeByScript)
+            print("By Script code:\n", "Number : ", numberByScript, "Email : ",
+                  emailByScript)  # ,"Site : ",siteByScript
+
+        print("\n\n\n\n\n\n\n\n")
+
+        # Page source code
+        if htmlCodeByPageSource != None:
+            numberByPageSource = numberIsExist(htmlCodeByPageSource)
+            siteByScriptPageSource = siteIsExist(htmlCodeByPageSource)
+            emailByScriptPageSource = emailIsExist(htmlCodeByPageSource)
+            print("By Page source code:\n", "Number : ", numberByPageSource, "Email : ",
+                  emailByScriptPageSource)  # ,"Site : ",siteByScriptPageSource
+
+        print("\n\n\n\n\n\n\n\n")
+
+    except Exception as e:
+        print(e)
+
+
+def createDriver():
+    try:
+        global driver
+
+        options = Options()
+
+        #  Code to disable notifications pop up of Chrome Browser
+        options.add_argument("--disable-notifications")
+        options.add_argument("--disable-infobars")
+        options.add_argument("--mute-audio")
+        # options.add_argument("headless")
+        # options.add_argument("user-data-dir=selenium") # cookies using
+
+        try:
+
+            driver = webdriver.Chrome(
+                executable_path=ChromeDriverManager().install(), options=options
+            )
+        except Exception:
+            print("Error loading chrome webdriver " + str(sys.exc_info()[0]))
+            exit(1)
+
+    except Exception as e:
+        print(e)
+        print("Error createDriver " +str(sys.exc_info()[0]))
+        exit(1)
+def scrapeObject():
+    createDriver()
+    #"//*[text()='View more comments']"
+    # xpathMoreCommentsComments="//*[contains(text(), 'View more comments')]"
+
+    xpathMoreComments="//span[contains(text(), 'comments')]"
+    xpathComments="//div[contains(@aria-label,'Comment')]"
+    # xpathProfile="//div//svg//mask//g//*"
+    xpathProfile="//*[@id='mount_0_0']/div/div[1]/div/div[3]/div/div/div[1]/div[1]/div/div[2]/div/div/div/div[1]/div[4]/ul/li[*]/div[1]/div/div[2]/div/div[1]/div/div[1]/div/div/span/span"
+        #"//*[@id='mount_0_0']/div/div[1]/div/div[3]/div/div/div[1]/div[1]/div/div[2]/div/div/div/div[1]/div[4]/ul/li[5]/div[1]/div/div[2]/div/div[1]/div/div[1]/div/div/span/span"
+    # url="https://www.facebook.com/instagram/photos/a.372558296163354/3534592773293208/?type=3&theater"
+    # url="https://www.facebook.com/llbean/photos/a.55494987414/10158220276487415/?type=3&theater"
+    url="https://www.facebook.com/Starbucks/photos/a.10150362709023057/10158872299233057"
+    # xpathComments="//div[@aria-posinset]//div[contains(@aria-label,'Comment by')]//a/span/span[@dir='auto']"
+    try:
+        driver.get(url)
+        sleep(1)
+        moreCommentsButton = None
+        try:
+            moreCommentsButton = driver.find_element_by_xpath(xpathMoreComments)
+            try:
+                moreCommentsButton.click()
+            except Exception:
+                print("failed to click on more comments")
+            print("moreCommentsButton:")
+            print("innerHTML:", moreCommentsButton.get_attribute('innerHTML'))
+            print("moreCommentsButton.text:", moreCommentsButton.text)
+
+            attributes = driver.execute_script(
+                'if(arguments[0].attributes!==undefined){var items = {}; for (index = 0; index < arguments[0].attributes.length; ++index) { items[arguments[0].attributes[index].name] = arguments[0].attributes[index].value }; return items;} else return "No attributes!!!!!!!"',
+                moreCommentsButton)
+            print("attributes:", attributes)
+
+            print(moreCommentsButton)
+
+        except Exception as e:
+            print(e)
+            print("Comments Exception - moreCommentsButton")
+
+        # sleep(1)
+        try:
+            profiles = driver.find_elements_by_xpath(xpathProfile)
+            print("profiles len:",len(profiles))
+
+            print("profiles:")
+            for profile in profiles:
+                print("profiles innerHTML:", profile.get_attribute('innerHTML'))
+                print("profiles.text:", profile.text)
+
+                attributes = driver.execute_script(
+                    'if(arguments[0].attributes!==undefined){var items = {}; for (index = 0; index < arguments[0].attributes.length; ++index) { items[arguments[0].attributes[index].name] = arguments[0].attributes[index].value }; return items;} else return "No attributes!!!!!!!"',
+                    profile)
+                print("profiles attributes:", attributes)
+
+                print(profile)
+                print("\n")
+                try:
+                    profile.click()
+                    print("Clicked profile")
+                except Exception:
+                    print("failed to click on profile")
+
+        except Exception as e:
+            print(e)
+            print
+
+        comments = driver.find_elements_by_xpath(xpathComments)
+
+
+        print("\n\n")
+        print("comments:",comments)
+        print("comments len:",len(comments))
+        i = 1
+        for comment in comments:
+            try:
+                print("Comment number", i)
+                try:
+                    comment.click()
+                except Exception:
+                    print("failed to click on comment")
+                # newDriver=comment.send_keys(Keys.COMMAND + 't')
+                attributes = driver.execute_script(
+                    'var items = {}; for (index = 0; index < arguments[0].attributes.length; ++index) { items[arguments[0].attributes[index].name] = arguments[0].attributes[index].value }; return items;',
+                    comment)
+                print("attributes:", attributes)
+
+                sleep(5)
+                break
+
+            except Exception as e:
+                print(e)
+            i += 1
+        print(len(comments))
+        sleep(20)
+    except Exception as e:
+        print(e)
+        print("Comments Exception")
+def scrapePost(url):
+    driver.get(url)
+    sleep(2)
+    try:
+        comments = driver.find_elements_by_xpath(
+            "//div[@aria-posinset]//div[contains(@aria-label,'Comment by')]//a/span/span[@dir='auto']")
+        print(comments)
+        print(len(comments))
+        i = 1
+        for comment in comments:
+            try:
+                print("Comment number", i)
+                # newDriver=comment.send_keys(Keys.COMMAND + 't')
+                attributes = driver.execute_script(
+                    'var items = {}; for (index = 0; index < arguments[0].attributes.length; ++index) { items[arguments[0].attributes[index].name] = arguments[0].attributes[index].value }; return items;',
+                    comment)
+                print("attributes:", attributes)
+
+                sleep(20)
+                break
+
+            except Exception as e:
+                print(e)
+            i += 1
+        print(len(comments))
+        sleep(20)
+    except Exception as e:
+        print(e)
+        print("Comments Exception")
 
 
 def scrape_email_phone(url):
@@ -948,91 +1109,8 @@ def scrape_email_phone(url):
         print("\nStarting Scraping...")
         login(cfg["email"], cfg["password"])
         sleep(3)
-        driver.get(url)
-
-        htmlCodeByPageSource=driver.page_source
-        htmlCodeByScript = driver.execute_script("return document.documentElement.outerHTML;")
-
-
-        if fromGroup:
-            try:
-                comments=driver.find_elements_by_xpath("//div[@aria-posinset]//div[contains(@aria-label,'Comment by')]//a/span/span[@dir='auto']")
-                print(comments)
-                print(len(comments))
-                i = 1
-                for comment in comments:
-
-                    try:
-                        print("Comment number", i)
-                        # newDriver=comment.send_keys(Keys.COMMAND + 't')
-                        attributes = driver.execute_script(
-                            'var items = {}; for (index = 0; index < arguments[0].attributes.length; ++index) { items[arguments[0].attributes[index].name] = arguments[0].attributes[index].value }; return items;',
-                            comment)
-                        print("attributes:",attributes)
-
-                        sleep(20)
-                        break
-                        # print(comments.text)
-                        # print(comments.tag_name)
-                        # print(comments.screenshot(f'foo{i}.png'))
-
-                    except Exception as e:
-                        print(e)
-                    i += 1
-                print(len(comments))
-                sleep(20)
-            except Exception as e:
-                print(e)
-                print("Comments Exception")
-        # # Script code
-        # f = open("htmls/htmlByScript.html", "a+")
-        # f.write(htmlCodeByScript)
-        # f.close()
-        #
-        # # Page source code
-        # f = open("htmls/htmlByPageSource.html", "a+")
-        # f.write(htmlCodeByPageSource)
-        # f.close()
-
-    else:
-        f = open("htmls/htmlByPageSource.html", "r")
-        htmlCodeByPageSource = f.read()
-        f.close()
-
-        f = open("htmls/htmlByScript.html", "r")
-        htmlCodeByScript = f.read()
-        f.close()
-        # htmlCodeByPageSource=driver.page_source
-        # htmlCodeByScript = driver.execute_script("return document.documentElement.outerHTML;")
-
-    # elm = driver.find_element_by_css_selector("html")
-
-
-    if not fromGroup:
-
-        try:
-            print("\n\n\n\n\n\n\n\n")
-
-            # Script code
-            if htmlCodeByScript != None:
-                numberByScript = numberIsExist(htmlCodeByScript)
-                siteByScript = siteIsExist(htmlCodeByScript)
-                emailByScript = emailIsExist(htmlCodeByScript)
-                print("By Script code:\n","Number : ",numberByScript,"Email : ",emailByScript) # ,"Site : ",siteByScript
-
-            print("\n\n\n\n\n\n\n\n")
-
-            # Page source code
-            if htmlCodeByPageSource != None:
-                numberByPageSource = numberIsExist(htmlCodeByPageSource)
-                siteByScriptPageSource = siteIsExist(htmlCodeByPageSource)
-                emailByScriptPageSource = emailIsExist(htmlCodeByPageSource)
-                print("By Page source code:\n","Number : ",numberByPageSource,"Email : ",emailByScriptPageSource ) # ,"Site : ",siteByScriptPageSource
-
-            print("\n\n\n\n\n\n\n\n")
-
-        except Exception as e:
-            print(e)
+        scrapePost(url)
+        sleep(2.5)
 
     if fromSelenium:
         driver.close()
@@ -1048,6 +1126,18 @@ def scrape_email_phone(url):
     # for item in address_elements:
     #     print
     #     item.text
+
+def saveHtmlCodeToFile(htmlCodeByScript,htmlCodeByPageSource):
+    # Script code
+    f = open("htmls/htmlByScript.html", "a+")
+    f.write(htmlCodeByScript)
+    f.close()
+
+    # Page source code
+    f = open("htmls/htmlByPageSource.html", "a+")
+    f.write(htmlCodeByPageSource)
+    f.close()
+
 def numberIsExist(string):
     regexp = re.compile(r'\d{3}[-]\d{3}[-]\d{4}')
     if regexp.search(string):
@@ -1113,7 +1203,7 @@ def writeToCSV():
 
     print("NEED TO CHECK IF MAIL IS VALID!!!!!!!!!!")
 
-def is_fb_logged_in():
+def isFbLoggedIn():
     driver.get("https://facebook.com")
     if 'Facebook – log in or sign up' in driver.title:
         return False
@@ -1191,5 +1281,7 @@ if __name__ == "__main__":
 
     # get things rolling
     #scraper()
-    scrape_email_phone("https://www.facebook.com/permalink.php?story_fbid=316835503000602&id=101192311231590")
+    # scrape_email_phone("https://www.facebook.com/groups/268799249931777/permalink/2393845007427180/")
     # test()
+    # scrapePost("")
+    scrapeObject()
