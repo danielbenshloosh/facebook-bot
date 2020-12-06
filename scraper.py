@@ -959,102 +959,173 @@ def createDriver():
         print("Error createDriver " +str(sys.exc_info()[0]))
         exit(1)
 def scrapeObject():
+
     createDriver()
+    ################# Define XPATHS #################
     #"//*[text()='View more comments']"
     # xpathMoreCommentsComments="//*[contains(text(), 'View more comments')]"
-
+    xpathOpenComment="/html/body/div[1]/div/div[1]/div/div[3]/div/div/div[1]/div[1]/div[4]/div/div/div/div/div/div[1]/div/div/div/div/div/div/div/div/div[2]/div/div[4]/div/div/div/div/div[1]/div/div[2]/div[1]/div/span"
     xpathMoreComments="//span[contains(text(), 'comments')]"
+    xpathPreviewComments="//*[@id='mount_0_0']/div/div[1]/div/div[3]/div/div/div[1]/div[1]/div[4]/div/div/div/div/div/div[1]/div/div/div/div/div/div/div/div/div[2]/div/div[4]/div/div/div[2]/div[2]/div/div[2]"
+    xpathMoreComments="//*[@id='mount_0_0']/div/div[1]/div/div[3]/div/div/div[1]/div[1]/div/div[2]/div/div/div/div[1]/div[4]/div[2]/div[1]/div[2]/span"
     xpathComments="//div[contains(@aria-label,'Comment')]"
     # xpathProfile="//div//svg//mask//g//*"
     xpathProfile="//*[@id='mount_0_0']/div/div[1]/div/div[3]/div/div/div[1]/div[1]/div/div[2]/div/div/div/div[1]/div[4]/ul/li[*]/div[1]/div/div[2]/div/div[1]/div/div[1]/div/div/span/span"
         #"//*[@id='mount_0_0']/div/div[1]/div/div[3]/div/div/div[1]/div[1]/div/div[2]/div/div/div/div[1]/div[4]/ul/li[5]/div[1]/div/div[2]/div/div[1]/div/div[1]/div/div/span/span"
+
+    xpathCommentsContent = "//*[@id='mount_0_0']/div/div[1]/div/div[3]/div/div/div[1]/div[1]/div[4]/div/div/div/div/div/div[1]/div/div/div/div/div/div/div/div/div[2]/div/div[4]/div/div/div[2]/ul/li[*]/div[1]/div/div[2]/div/div[1]/div/div[1]/div/div"
+
+############## Post photo xpath working !!!!
+    # xpathCommentsContent="//*[@id='mount_0_0']/div/div[1]/div/div[3]/div/div/div[1]/div[1]/div/div[2]/div/div/div/div[1]/div[4]/ul/li[*]/div[1]/div/div[2]/div/div[1]/div/div[1]/div/div/div/span/div/div"
+    # xpathProfile="//*[@id='mount_0_0']/div/div[1]/div/div[3]/div/div/div[1]/div[1]/div/div[2]/div/div/div/div[1]/div[4]/ul/li[*]/div[1]/div/div[2]/div/div[1]/div/div[1]/div/div/span/span"
+
+
+
+    ################# Define URL #################
+
+    url="https://www.facebook.com/groups/secrettelaviv/permalink/10158628159535943/"
+    # url="https://www.facebook.com/groups/secrettelaviv/permalink/10158630646610943/"
     # url="https://www.facebook.com/instagram/photos/a.372558296163354/3534592773293208/?type=3&theater"
     # url="https://www.facebook.com/llbean/photos/a.55494987414/10158220276487415/?type=3&theater"
-    url="https://www.facebook.com/Starbucks/photos/a.10150362709023057/10158872299233057"
+    # url="https://www.facebook.com/Starbucks/photos/a.10150362709023057/10158872299233057"
+    # url="https://www.facebook.com/backyard.org.il/posts/673419573345065"
     # xpathComments="//div[@aria-posinset]//div[contains(@aria-label,'Comment by')]//a/span/span[@dir='auto']"
+
+    ################# Define Flags #################
+
+    flagGetCommentsContect=False
+    flagGetProfilesComments=True
+    flagGetMoreViews=True
+
+
     try:
         driver.get(url)
-        sleep(1)
-        moreCommentsButton = None
+        sleep(3)
         try:
-            moreCommentsButton = driver.find_element_by_xpath(xpathMoreComments)
-            try:
-                moreCommentsButton.click()
-            except Exception:
-                print("failed to click on more comments")
-            print("moreCommentsButton:")
-            print("innerHTML:", moreCommentsButton.get_attribute('innerHTML'))
-            print("moreCommentsButton.text:", moreCommentsButton.text)
-
-            attributes = driver.execute_script(
-                'if(arguments[0].attributes!==undefined){var items = {}; for (index = 0; index < arguments[0].attributes.length; ++index) { items[arguments[0].attributes[index].name] = arguments[0].attributes[index].value }; return items;} else return "No attributes!!!!!!!"',
-                moreCommentsButton)
-            print("attributes:", attributes)
-
-            print(moreCommentsButton)
-
+            xpathToRemove = "//*[@id='mount_0_0']/div/didrv[1]/div/div[3]/div/div/div[1]/div[2]/div"
+            elementToRemove = driver.find_element_by_xpath(xpathToRemove)
+            driver.execute_script("arguments[0].setAttribute('class','vote-link up voted')", elementToRemove)
         except Exception as e:
             print(e)
-            print("Comments Exception - moreCommentsButton")
-
-        # sleep(1)
-        try:
-            profiles = driver.find_elements_by_xpath(xpathProfile)
-            print("profiles len:",len(profiles))
-
-            print("profiles:")
-            for profile in profiles:
-                print("profiles innerHTML:", profile.get_attribute('innerHTML'))
-                print("profiles.text:", profile.text)
-
-                attributes = driver.execute_script(
-                    'if(arguments[0].attributes!==undefined){var items = {}; for (index = 0; index < arguments[0].attributes.length; ++index) { items[arguments[0].attributes[index].name] = arguments[0].attributes[index].value }; return items;} else return "No attributes!!!!!!!"',
-                    profile)
-                print("profiles attributes:", attributes)
-
-                print(profile)
-                print("\n")
-                try:
-                    profile.click()
-                    print("Clicked profile")
-                except Exception:
-                    print("failed to click on profile")
-
-        except Exception as e:
-            print(e)
-            print
-
-        comments = driver.find_elements_by_xpath(xpathComments)
-
-
-        print("\n\n")
-        print("comments:",comments)
-        print("comments len:",len(comments))
-        i = 1
-        for comment in comments:
+            print("elementToRemove Exception - Not exist")
+        if flagGetMoreViews:
             try:
-                print("Comment number", i)
-                try:
-                    comment.click()
-                except Exception:
-                    print("failed to click on comment")
-                # newDriver=comment.send_keys(Keys.COMMAND + 't')
-                attributes = driver.execute_script(
-                    'var items = {}; for (index = 0; index < arguments[0].attributes.length; ++index) { items[arguments[0].attributes[index].name] = arguments[0].attributes[index].value }; return items;',
-                    comment)
-                print("attributes:", attributes)
+                # Open comments
+                openCommentsButton = driver.find_element_by_xpath(xpathOpenComment)
+                if openCommentsButton == None:
 
-                sleep(5)
-                break
+                    print("open Views Buttons is NOT Exist!")
+                else:
+                    attributes = driver.execute_script(
+                        'if(arguments[0].attributes!==undefined){var items = {}; for (index = 0; index < arguments[0].attributes.length; ++index) { items[arguments[0].attributes[index].name] = arguments[0].attributes[index].value }; return items;} else return "No attributes!!!!!!!"',
+                        openCommentsButton)
+                    print("openCommentsButton sattributes:", attributes)
+                try:
+                    openCommentsButton.click()
+                    sleep(1)
+                    print("openCommentsButton clicked")
+                except Exception:
+                    print("failed to click on open comments")
+            except Exception as e:
+                print(e)
+                print
+            flagMoreViews = True
+            countClicks = 0
+
+            while(flagMoreViews):
+                if countClicks == 3:
+                    break
+                moreCommentsButton = None
+                try:
+                    moreCommentsButton = driver.find_element_by_xpath(xpathPreviewComments)
+                    if moreCommentsButton == None:
+                        flagMoreViews = False
+                        print("More Views Buttons is NOT Exist!")
+                        break
+                    try:
+                        moreCommentsButton.click()
+                        countClicks += 1
+                        print("moreCommentsButton clicked")
+                    except Exception:
+                        print("failed to click on more comments")
+                    print("moreCommentsButton:")
+                    print("innerHTML:", moreCommentsButton.get_attribute('innerHTML'))
+                    print("moreCommentsButton.text:", moreCommentsButton.text)
+
+                    attributes = driver.execute_script(
+                        'if(arguments[0].attributes!==undefined){var items = {}; for (index = 0; index < arguments[0].attributes.length; ++index) { items[arguments[0].attributes[index].name] = arguments[0].attributes[index].value }; return items;} else return "No attributes!!!!!!!"',
+                        moreCommentsButton)
+                    print("attributes:", attributes)
+
+                    print(moreCommentsButton)
+
+                except Exception as e:
+                    flagMoreViews = False
+                    print("More Views Buttons is NOT Exist!")
+                    break
+                    print(e)
+                print("Clicked:",countClicks)
+                sleep(2)
+        if flagGetProfilesComments:
+            # sleep(1)
+            try:
+                profiles = driver.find_elements_by_xpath(xpathProfile)
+                print("profiles len:",len(profiles))
+
+                print("profiles:")
+                for profile in profiles:
+                    print("profiles innerHTML:", profile.get_attribute('innerHTML'))
+                    print("profiles.text:", profile.text)
+
+                    attributes = driver.execute_script(
+                        'if(arguments[0].attributes!==undefined){var items = {}; for (index = 0; index < arguments[0].attributes.length; ++index) { items[arguments[0].attributes[index].name] = arguments[0].attributes[index].value }; return items;} else return "No attributes!!!!!!!"',
+                        profile)
+                    print("profiles attributes:", attributes)
+
+                    print(profile)
+                    print("\n")
+                    try:
+                        profile.click()
+                        print("Clicked profile")
+                    except Exception:
+                        print("failed to click on profile")
 
             except Exception as e:
                 print(e)
-            i += 1
-        print(len(comments))
-        sleep(20)
+                print
+        if flagGetCommentsContect:
+            comments = driver.find_elements_by_xpath(xpathCommentsContent)
+            print("\n\n")
+            print("comments:",comments)
+            print("comments len:",len(comments))
+            i = 1
+            for comment in comments:
+                try:
+                    print("Comment number", i)
+                    try:
+                        comment.click()
+                    except Exception:
+                        print("failed to click on comment")
+                    # newDriver=comment.send_keys(Keys.COMMAND + 't')
+                    attributes = driver.execute_script(
+                        'var items = {}; for (index = 0; index < arguments[0].attributes.length; ++index) { items[arguments[0].attributes[index].name] = arguments[0].attributes[index].value }; return items;',
+                        comment)
+                    print("attributes:", attributes)
+                    print("Comment innerHTML:", comment.get_attribute('innerHTML'))
+                    print("Comment.text:", comment.text)
+
+                    # sleep(5)
+                    # break
+
+                except Exception as e:
+                    print(e)
+                i += 1
+            print(len(comments))
+            sleep(20)
     except Exception as e:
         print(e)
-        print("Comments Exception")
+        print("Objects Exception")
+
 def scrapePost(url):
     driver.get(url)
     sleep(2)
@@ -1285,3 +1356,6 @@ if __name__ == "__main__":
     # test()
     # scrapePost("")
     scrapeObject()
+
+
+    # style="visibility:hidden"
